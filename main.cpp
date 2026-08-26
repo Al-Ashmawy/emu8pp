@@ -65,8 +65,12 @@ public:
         for (int i = 0; i < 16; i++) {
             println(log_file, "V{:x}: {:x}", i, registers[i]);
         }
+
         println(log_file, "I : {:x}", index);
+        println(log_file, "delay: {:x}", delay);
+        println(log_file, "sound: {:x}", sound);
         println(log_file);
+
         println(log_file, "display:");
         for (const auto& row : display) {
             for (const auto& col : row) {
@@ -110,7 +114,8 @@ private:
         static constexpr int OP_FX1E = OP_FX18 + 1;
         static constexpr int OP_FX29 = OP_FX1E + 1;
         static constexpr int OP_FX33 = OP_FX29 + 1;
-        static constexpr int OP_FX65 = OP_FX33 + 1;
+        static constexpr int OP_FX55 = OP_FX33 + 1;
+        static constexpr int OP_FX65 = OP_FX55 + 1;
     };
 
     void init_table()
@@ -148,6 +153,7 @@ private:
         table[chip8::OPCODE_INDEX::OP_FX1E] = [this]() { this->op_fx1e(); };
         table[chip8::OPCODE_INDEX::OP_FX29] = [this]() { this->op_fx29(); };
         table[chip8::OPCODE_INDEX::OP_FX33] = [this]() { this->op_fx33(); };
+        table[chip8::OPCODE_INDEX::OP_FX55] = [this]() { this->op_fx55(); };
         table[chip8::OPCODE_INDEX::OP_FX65] = [this]() { this->op_fx65(); };
     }
 
@@ -213,9 +219,12 @@ private:
                 table[OPCODE_INDEX::OP_FX0A]();
                 break;
             case 5:
-                switch (nibble2) {
+                switch (nibble3) {
                 case 1:
                     table[OPCODE_INDEX::OP_FX15]();
+                    break;
+                case 5:
+                    table[OPCODE_INDEX::OP_FX55]();
                     break;
                 case 6:
                     table[OPCODE_INDEX::OP_FX65]();
@@ -548,7 +557,7 @@ int main(int argc, char** argv)
 
     chip8 chip(argv[1]);
 
-    InitWindow(1280, 720, "chip-8 emulator");
+    InitWindow(1280, 640, "chip-8 emulator");
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
