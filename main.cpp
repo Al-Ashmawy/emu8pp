@@ -57,7 +57,6 @@ public:
     }
 
 private:
-    ofstream log_file { "emu8.log" };
     vector<uint8_t> memory { vector<uint8_t>(MEMORY_SIZE) };
     vector<uint8_t> registers { vector<uint8_t>(16) };
     vector<uint16_t> stack { vector<uint16_t>(16) };
