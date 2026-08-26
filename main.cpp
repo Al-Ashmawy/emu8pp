@@ -39,6 +39,8 @@ public:
     vector<vector<uint8_t>> display { vector(
         SCREEN_HEIGHT, vector<uint8_t>(SCREEN_WIDTH)) };
     vector<bool> keyboard { vector<bool>(16) };
+    uint8_t delay { 0 };
+    uint8_t sound { 0 };
 
     chip8(const string& rom)
     {
@@ -49,37 +51,9 @@ public:
 
     void cycle()
     {
-        println(log_file, "+=======================+");
-        println(log_file, "pc: {:x}", pc);
-        flush(log_file);
-
         fetch();
 
-        println(log_file, "opcode {:04x}", opcode);
-        flush(log_file);
-
         decode_execute();
-
-        println(log_file, "registers:");
-        flush(log_file);
-        for (int i = 0; i < 16; i++) {
-            println(log_file, "V{:x}: {:x}", i, registers[i]);
-        }
-
-        println(log_file, "I : {:x}", index);
-        println(log_file, "delay: {:x}", delay);
-        println(log_file, "sound: {:x}", sound);
-        println(log_file);
-
-        println(log_file, "display:");
-        for (const auto& row : display) {
-            for (const auto& col : row) {
-                print(log_file, "{}", col);
-            }
-            println(log_file);
-        }
-        println(log_file);
-        flush(log_file);
     }
 
 private:
@@ -89,8 +63,6 @@ private:
     vector<uint16_t> stack { vector<uint16_t>(16) };
     uint16_t opcode { };
     uint16_t index { 0 };
-    uint8_t delay { 0 };
-    uint8_t sound { 0 };
     uint16_t pc { EXECUTION_START };
     int8_t sp { -1 };
     mt19937 random_byte { mt19937(
@@ -353,6 +325,9 @@ private:
         if (result > 255) {
             registers[0xf] = 1;
         }
+        else {
+            registers[0xf] = 0;
+        }
         registers[x] = result;
     }
 
@@ -475,7 +450,7 @@ private:
     void op_fx0a()
     {
         uint8_t x = (opcode & 0x0f00) >> 8;
-        for (int i = 0; i < 0xf; i++) {
+        for (int i = 0; i <= 0xf; i++) {
             if (keyboard[i]) {
                 registers[x] = i;
                 return;
@@ -558,21 +533,23 @@ int main(int argc, char** argv)
     chip8 chip(argv[1]);
 
     InitWindow(1280, 640, "chip-8 emulator");
-    SetTargetFPS(60);
+    SetTargetFPS(1000);
+    double tick = 0;
 
     while (!WindowShouldClose()) {
+        tick += GetFrameTime();
         fill(chip.keyboard.begin(), chip.keyboard.end(), 0);
         if (IsKeyDown(KEY_ONE)) {
-            chip.keyboard[0] = true;
-        }
-        if (IsKeyDown(KEY_TWO)) {
             chip.keyboard[1] = true;
         }
-        if (IsKeyDown(KEY_THREE)) {
+        if (IsKeyDown(KEY_TWO)) {
             chip.keyboard[2] = true;
         }
-        if (IsKeyDown(KEY_FOUR)) {
+        if (IsKeyDown(KEY_THREE)) {
             chip.keyboard[3] = true;
+        }
+        if (IsKeyDown(KEY_FOUR)) {
+            chip.keyboard[0xc] = true;
         }
         if (IsKeyDown(KEY_Q)) {
             chip.keyboard[4] = true;
@@ -584,31 +561,31 @@ int main(int argc, char** argv)
             chip.keyboard[6] = true;
         }
         if (IsKeyDown(KEY_R)) {
-            chip.keyboard[7] = true;
+            chip.keyboard[0xd] = true;
         }
         if (IsKeyDown(KEY_A)) {
-            chip.keyboard[8] = true;
+            chip.keyboard[7] = true;
         }
         if (IsKeyDown(KEY_S)) {
-            chip.keyboard[9] = true;
+            chip.keyboard[8] = true;
         }
         if (IsKeyDown(KEY_D)) {
-            chip.keyboard[10] = true;
+            chip.keyboard[9] = true;
         }
         if (IsKeyDown(KEY_F)) {
-            chip.keyboard[11] = true;
+            chip.keyboard[0xe] = true;
         }
         if (IsKeyDown(KEY_Z)) {
-            chip.keyboard[12] = true;
+            chip.keyboard[0xa] = true;
         }
         if (IsKeyDown(KEY_X)) {
-            chip.keyboard[13] = true;
+            chip.keyboard[0] = true;
         }
         if (IsKeyDown(KEY_C)) {
-            chip.keyboard[14] = true;
+            chip.keyboard[0xb] = true;
         }
         if (IsKeyDown(KEY_V)) {
-            chip.keyboard[15] = true;
+            chip.keyboard[0xf] = true;
         }
 
         BeginDrawing();
@@ -616,6 +593,15 @@ int main(int argc, char** argv)
         DrawVideo(chip.display);
         EndDrawing();
 
+        if (tick >= 1.0 / 60) {
+            tick = 0;
+            if (chip.delay > 0) {
+                chip.delay--;
+            }
+            if (chip.sound > 0) {
+                chip.sound--;
+            }
+        }
         chip.cycle();
     }
 
