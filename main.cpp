@@ -1,13 +1,13 @@
-#include <raylib.h>
 #include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <print>
 #include <random>
+#include <raylib.h>
 #include <vector>
-#include <functional>
 
 using namespace std;
 
@@ -37,7 +37,7 @@ const vector<vector<uint8_t>> font_sprites = { { 0xF0, 0x90, 0x90, 0x90, 0xF0 },
 class chip8 {
 public:
     vector<vector<uint8_t>> display { vector(
-            SCREEN_WIDTH, vector<uint8_t>(SCREEN_HEIGHT)) };
+        SCREEN_HEIGHT, vector<uint8_t>(SCREEN_WIDTH)) };
     vector<bool> keyboard { vector<bool>(16) };
 
     chip8(const string& rom)
@@ -47,7 +47,8 @@ public:
         init_table();
     }
 
-    void cycle() {
+    void cycle()
+    {
         println(log_file, "+=======================+");
         println(log_file, "pc: {:x}", pc);
         flush(log_file);
@@ -61,16 +62,24 @@ public:
 
         println(log_file, "registers:");
         flush(log_file);
-        for (int i = 0; i < 16; i++){
+        for (int i = 0; i < 16; i++) {
             println(log_file, "V{:x}: {:x}", i, registers[i]);
         }
         println(log_file, "I : {:x}", index);
+        println(log_file);
+        println(log_file, "display:");
+        for (const auto& row : display) {
+            for (const auto& col : row) {
+                print(log_file, "{}", col);
+            }
+            println(log_file);
+        }
         println(log_file);
         flush(log_file);
     }
 
 private:
-    ofstream log_file {"emu8.log"};
+    ofstream log_file { "emu8.log" };
     vector<uint8_t> memory { vector<uint8_t>(MEMORY_SIZE) };
     vector<uint8_t> registers { vector<uint8_t>(16) };
     vector<uint16_t> stack { vector<uint16_t>(16) };
@@ -82,7 +91,8 @@ private:
     int8_t sp { -1 };
     mt19937 random_byte { mt19937(
         chrono::system_clock::now().time_since_epoch().count()) };
-    vector<function<void(void)>> table = vector<function<void(void)>>(OPCODE_INDEX::OP_FX65 + 1);
+    vector<function<void(void)>> table
+        = vector<function<void(void)>>(OPCODE_INDEX::OP_FX65 + 1);
 
     struct OPCODE_INDEX {
         static constexpr int OP_EX9E = 0xe;
@@ -103,40 +113,42 @@ private:
         static constexpr int OP_FX65 = OP_FX33 + 1;
     };
 
-    void init_table() {
-        table[0x1] = [this](){this->op_1nnn();};
-        table[0x2] = [this](){this->op_2nnn();};
-        table[0x3] = [this](){this->op_3xkk();};
-        table[0x4] = [this](){this->op_4xkk();};
-        table[0x5] = [this](){this->op_5xy0();};
-        table[0x6] = [this](){this->op_6xkk();};
-        table[0x7] = [this](){this->op_7xkk();};
-        table[0x9] = [this](){this->op_9xy0();};
-        table[0xa] = [this](){this->op_annn();};
-        table[0xb] = [this](){this->op_bnnn();};
-        table[0xc] = [this](){this->op_cxkk();};
-        table[0xd] = [this](){this->op_dxyn();};
-        table[chip8::OPCODE_INDEX::OP_EX9E] = [this](){this->op_ex9e();};
-        table[chip8::OPCODE_INDEX::OP_EXA1] = [this](){this->op_exa1();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 0] = [this](){this->op_8xy0();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 1] = [this](){this->op_8xy1();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 2] = [this](){this->op_8xy2();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 3] = [this](){this->op_8xy3();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 4] = [this](){this->op_8xy4();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 5] = [this](){this->op_8xy5();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 6] = [this](){this->op_8xy6();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 7] = [this](){this->op_8xy7();};
-        table[chip8::OPCODE_INDEX::OP_8XYN + 0xe] = [this](){this->op_8xye();};
-        table[chip8::OPCODE_INDEX::OP_00E0] = [this](){this->op_00e0();};
-        table[chip8::OPCODE_INDEX::OP_00EE] = [this](){this->op_00ee();};
-        table[chip8::OPCODE_INDEX::OP_FX07] = [this](){this->op_fx07();};
-        table[chip8::OPCODE_INDEX::OP_FX0A] = [this](){this->op_fx0a();};
-        table[chip8::OPCODE_INDEX::OP_FX15] = [this](){this->op_fx15();};
-        table[chip8::OPCODE_INDEX::OP_FX18] = [this](){this->op_fx18();};
-        table[chip8::OPCODE_INDEX::OP_FX1E] = [this](){this->op_fx1e();};
-        table[chip8::OPCODE_INDEX::OP_FX29] = [this](){this->op_fx29();};
-        table[chip8::OPCODE_INDEX::OP_FX33] = [this](){this->op_fx33();};
-        table[chip8::OPCODE_INDEX::OP_FX65] = [this](){this->op_fx65();};
+    void init_table()
+    {
+        table[0x1] = [this]() { this->op_1nnn(); };
+        table[0x2] = [this]() { this->op_2nnn(); };
+        table[0x3] = [this]() { this->op_3xkk(); };
+        table[0x4] = [this]() { this->op_4xkk(); };
+        table[0x5] = [this]() { this->op_5xy0(); };
+        table[0x6] = [this]() { this->op_6xkk(); };
+        table[0x7] = [this]() { this->op_7xkk(); };
+        table[0x9] = [this]() { this->op_9xy0(); };
+        table[0xa] = [this]() { this->op_annn(); };
+        table[0xb] = [this]() { this->op_bnnn(); };
+        table[0xc] = [this]() { this->op_cxkk(); };
+        table[0xd] = [this]() { this->op_dxyn(); };
+        table[chip8::OPCODE_INDEX::OP_EX9E] = [this]() { this->op_ex9e(); };
+        table[chip8::OPCODE_INDEX::OP_EXA1] = [this]() { this->op_exa1(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 0] = [this]() { this->op_8xy0(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 1] = [this]() { this->op_8xy1(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 2] = [this]() { this->op_8xy2(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 3] = [this]() { this->op_8xy3(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 4] = [this]() { this->op_8xy4(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 5] = [this]() { this->op_8xy5(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 6] = [this]() { this->op_8xy6(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 7] = [this]() { this->op_8xy7(); };
+        table[chip8::OPCODE_INDEX::OP_8XYN + 0xe]
+            = [this]() { this->op_8xye(); };
+        table[chip8::OPCODE_INDEX::OP_00E0] = [this]() { this->op_00e0(); };
+        table[chip8::OPCODE_INDEX::OP_00EE] = [this]() { this->op_00ee(); };
+        table[chip8::OPCODE_INDEX::OP_FX07] = [this]() { this->op_fx07(); };
+        table[chip8::OPCODE_INDEX::OP_FX0A] = [this]() { this->op_fx0a(); };
+        table[chip8::OPCODE_INDEX::OP_FX15] = [this]() { this->op_fx15(); };
+        table[chip8::OPCODE_INDEX::OP_FX18] = [this]() { this->op_fx18(); };
+        table[chip8::OPCODE_INDEX::OP_FX1E] = [this]() { this->op_fx1e(); };
+        table[chip8::OPCODE_INDEX::OP_FX29] = [this]() { this->op_fx29(); };
+        table[chip8::OPCODE_INDEX::OP_FX33] = [this]() { this->op_fx33(); };
+        table[chip8::OPCODE_INDEX::OP_FX65] = [this]() { this->op_fx65(); };
     }
 
     void load_rom(const string& rom)
@@ -163,7 +175,6 @@ private:
         }
     }
 
-
     void fetch()
     {
         opcode = (memory[pc] << 8) | memory[pc + 1];
@@ -179,28 +190,22 @@ private:
 
         if (nibble1 >= 1 && nibble1 <= 0xd && nibble1 != 8) {
             table[nibble1]();
-        }
-        else if (nibble1 == 8) {
+        } else if (nibble1 == 8) {
             table[OPCODE_INDEX::OP_8XYN + nibble4]();
-        }
-        else if (nibble1 == 0xe) {
+        } else if (nibble1 == 0xe) {
             if (nibble4 == 0xe) {
                 table[OPCODE_INDEX::OP_EX9E]();
-            }
-            else {
+            } else {
                 table[OPCODE_INDEX::OP_EXA1]();
             }
-        }
-        else if (nibble1 == 0) {
+        } else if (nibble1 == 0) {
             if (nibble4 == 0) {
                 table[OPCODE_INDEX::OP_00E0]();
-            }
-            else {
+            } else {
                 table[OPCODE_INDEX::OP_00EE]();
             }
-        }
-        else if (nibble1 == 0xf) {
-            switch(nibble4) {
+        } else if (nibble1 == 0xf) {
+            switch (nibble4) {
             case 7:
                 table[OPCODE_INDEX::OP_FX07]();
                 break;
@@ -348,8 +353,7 @@ private:
         uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[x] > registers[y]) {
             registers[0xf] = 1;
-        }
-        else {
+        } else {
             registers[0xf] = 0;
         }
         registers[x] = registers[x] - registers[y];
@@ -368,8 +372,7 @@ private:
         uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[y] > registers[x]) {
             registers[0xf] = 1;
-        }
-        else {
+        } else {
             registers[0xf] = 0;
         }
         registers[x] = registers[y] - registers[x];
@@ -419,26 +422,28 @@ private:
         uint8_t vy = registers[y];
         uint8_t n = opcode & 0x000f;
 
+        bool collision = false;
         for (int i = 0; i < n; i++) {
             uint8_t sprite_byte = memory[index + i];
-            uint8_t& display_byte = display[vx % display.size()][(vy + i) % display[0].size()];
-            uint8_t output = sprite_byte ^ display_byte;
 
-            for (int i = 0; i < 8; i++) {
-                if (((sprite_byte >> i) & 1) && ((display_byte >> i) & 1)) {
-                    registers[0xf] = 1;
-                    break;
+            for (int j = 0; j < 8; j++) {
+                uint8_t& display_bit = display[(vy + i) % display.size()]
+                                              [(vx + j) % display[0].size()];
+                uint8_t sprite_bit = (sprite_byte >> (7 - j)) & 1;
+                if (sprite_bit && display_bit) {
+                    collision = true;
                 }
+                display_bit = display_bit ^ sprite_bit;
             }
-
-            display_byte = output;
         }
+        registers[0xf] = collision;
     }
 
     void op_ex9e()
     {
         uint8_t x = (opcode & 0x0f00) >> 8;
-        if (keyboard[x]) {
+        uint8_t vx = registers[x];
+        if (keyboard[vx]) {
             pc += 2;
         }
     }
@@ -446,7 +451,8 @@ private:
     void op_exa1()
     {
         uint8_t x = (opcode & 0x0f00) >> 8;
-        if (!keyboard[x]) {
+        uint8_t vx = registers[x];
+        if (!keyboard[vx]) {
             pc += 2;
         }
     }
@@ -470,27 +476,32 @@ private:
         pc -= 2;
     }
 
-    void op_fx15() {
+    void op_fx15()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         delay = registers[x];
     }
 
-    void op_fx18() {
+    void op_fx18()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         sound = registers[x];
     }
 
-    void op_fx1e() {
+    void op_fx1e()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         index = index + registers[x];
     }
 
-    void op_fx29() {
+    void op_fx29()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         index = FONT_START + registers[x] * 5;
     }
 
-    void op_fx33() {
+    void op_fx33()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         uint8_t num = registers[x];
         for (int i = 2; i >= 0; i--) {
@@ -499,14 +510,16 @@ private:
         }
     }
 
-    void op_fx55() {
+    void op_fx55()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         for (size_t i = 0; i <= x; i++) {
             memory[index + i] = registers[i];
         }
     }
 
-    void op_fx65() {
+    void op_fx65()
+    {
         uint8_t x = (opcode & 0x0f00) >> 8;
         for (size_t i = 0; i <= x; i++) {
             registers[i] = memory[index + i];
@@ -515,7 +528,8 @@ private:
 };
 
 constexpr int SCALE = 20;
-void DrawVideo(const vector<vector<uint8_t>>& display) {
+void DrawVideo(const vector<vector<uint8_t>>& display)
+{
     for (size_t i = 0; i < display.size(); i++) {
         for (size_t j = 0; j < display[0].size(); j++) {
             Color color = display[i][j] ? BLACK : WHITE;
