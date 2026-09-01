@@ -54,21 +54,36 @@ public:
         decode_execute();
     }
 
-    void set_key(int i) {
+    void set_key(int i)
+    {
         keyboard[i] = true;
     }
 
-    void unset_keys() {
+    void unset_keys()
+    {
         fill(keyboard.begin(), keyboard.end(), false);
     }
 
-    void tick_timers() {
+    void tick_timers()
+    {
         if (delay > 0) {
             delay--;
         }
         if (sound > 0) {
             sound--;
         }
+    }
+
+    bool is_halted() {
+        return halted;
+    }
+
+    bool is_rom_loaded() {
+        return rom_loaded;
+    }
+
+    string error() {
+        return error_message;
     }
 
 private:
@@ -91,14 +106,24 @@ private:
     map<uint8_t, function<void(void)>> table_f { };
     uint8_t x { }, y { }, n { }, kk { };
     uint16_t nnn { };
-
+    bool halted {false};
+    bool rom_loaded { true };
+    string error_message {};
 
     void init_table()
     {
         table_0[0x0] = [this]() { op_00e0(); };
         table_0[0xe] = [this] { op_00ee(); };
 
-        table[0x0] = [this]() { table_0[this->opcode & 0xf](); };
+        table[0x0] = [this]() {
+            auto it = table_0.find(this->opcode & 0xf);
+            if (it == table_0.end()) {
+                halted = true;
+                error_message = format("invalid instruction {:4x}", opcode);
+                return;
+            }
+            it->second();
+        };
         table[0x1] = [this]() { op_1nnn(); };
         table[0x2] = [this]() { op_2nnn(); };
         table[0x3] = [this]() { op_3xkk(); };
@@ -106,14 +131,38 @@ private:
         table[0x5] = [this]() { op_5xy0(); };
         table[0x6] = [this]() { op_6xkk(); };
         table[0x7] = [this]() { op_7xkk(); };
-        table[0x8] = [this]() { table_8[this->opcode & 0xf](); };
+        table[0x8] = [this]() {
+            auto it = table_8.find(this->opcode & 0xf);
+            if (it == table_8.end()) {
+                halted = true;
+                error_message = format("invalid instruction {:4x}", opcode);
+                return;
+            }
+            it->second();
+        };
         table[0x9] = [this]() { op_9xy0(); };
         table[0xa] = [this]() { op_annn(); };
         table[0xb] = [this]() { op_bnnn(); };
         table[0xc] = [this]() { op_cxkk(); };
         table[0xd] = [this]() { op_dxyn(); };
-        table[0xe] = [this]() { table_e[this->opcode & 0xf](); };
-        table[0xf] = [this]() { table_f[this->opcode & 0xff](); };
+        table[0xe] = [this]() {
+            auto it = table_e.find(this->opcode & 0xf);
+            if (it == table_e.end()) {
+                halted = true;
+                error_message = format("invalid instruction {:4x}", opcode);
+                return;
+            }
+            it->second();
+        };
+        table[0xf] = [this]() {
+            auto it = table_f.find(this->opcode & 0xff);
+            if (it == table_f.end()) {
+                halted = true;
+                error_message = format("invalid instruction {:4x}", opcode);
+                return;
+            }
+            it->second();
+        };
 
         table_8[0x0] = [this]() { op_8xy0(); };
         table_8[0x1] = [this]() { op_8xy1(); };
@@ -144,7 +193,8 @@ private:
         ifstream file(rom, ios::binary);
         int code = errno;
         if (!file.is_open()) {
-            println(cerr, "can't open file {}: {}", rom, strerror(code));
+            rom_loaded = false;
+            error_message = format("can't open file {}: {}", rom, strerror(code));
             return;
         }
 
@@ -444,7 +494,12 @@ int main(int argc, char** argv)
     }
 
     chip8 chip(argv[1]);
+    if (!chip.is_rom_loaded()) {
+        println(cerr, "{}", chip.error());
+        return -1;
+    }
 
+    SetTraceLogLevel(LOG_NONE);
     InitWindow(1280, 640, "chip-8 emulator");
     SetTargetFPS(800);
     double tick = 0;
@@ -510,7 +565,12 @@ int main(int argc, char** argv)
             tick = 0;
             chip.tick_timers();
         }
+
         chip.cycle();
+        if (chip.is_halted()) {
+            println(cerr, "{}", chip.error());
+            break;
+        }
     }
 
     CloseWindow();
