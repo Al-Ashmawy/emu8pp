@@ -4,6 +4,7 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <print>
 #include <random>
 #include <raylib.h>
@@ -66,66 +67,56 @@ private:
     int8_t sp { -1 };
     mt19937 random_byte { mt19937(
         chrono::system_clock::now().time_since_epoch().count()) };
-    vector<function<void(void)>> table
-        = vector<function<void(void)>>(OPCODE_INDEX::OP_FX65 + 1);
-
-    struct OPCODE_INDEX {
-        static constexpr int OP_EX9E = 0xe;
-        static constexpr int OP_EXA1 = 0xf;
-
-        static constexpr int OP_8XYN = 0x10;
-
-        static constexpr int OP_00E0 = OP_8XYN + 0xe + 1;
-        static constexpr int OP_00EE = OP_00E0 + 1;
-
-        static constexpr int OP_FX07 = OP_00EE + 1;
-        static constexpr int OP_FX0A = OP_FX07 + 1;
-        static constexpr int OP_FX15 = OP_FX0A + 1;
-        static constexpr int OP_FX18 = OP_FX15 + 1;
-        static constexpr int OP_FX1E = OP_FX18 + 1;
-        static constexpr int OP_FX29 = OP_FX1E + 1;
-        static constexpr int OP_FX33 = OP_FX29 + 1;
-        static constexpr int OP_FX55 = OP_FX33 + 1;
-        static constexpr int OP_FX65 = OP_FX55 + 1;
-    };
+    map<uint8_t, function<void(void)>> table;
+    map<uint8_t, function<void(void)>> table_0;
+    map<uint8_t, function<void(void)>> table_8;
+    map<uint8_t, function<void(void)>> table_e;
+    map<uint8_t, function<void(void)>> table_f;
 
     void init_table()
     {
-        table[0x1] = [this]() { this->op_1nnn(); };
-        table[0x2] = [this]() { this->op_2nnn(); };
-        table[0x3] = [this]() { this->op_3xkk(); };
-        table[0x4] = [this]() { this->op_4xkk(); };
-        table[0x5] = [this]() { this->op_5xy0(); };
-        table[0x6] = [this]() { this->op_6xkk(); };
-        table[0x7] = [this]() { this->op_7xkk(); };
-        table[0x9] = [this]() { this->op_9xy0(); };
-        table[0xa] = [this]() { this->op_annn(); };
-        table[0xb] = [this]() { this->op_bnnn(); };
-        table[0xc] = [this]() { this->op_cxkk(); };
-        table[0xd] = [this]() { this->op_dxyn(); };
-        table[chip8::OPCODE_INDEX::OP_EX9E] = [this]() { this->op_ex9e(); };
-        table[chip8::OPCODE_INDEX::OP_EXA1] = [this]() { this->op_exa1(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 0] = [this]() { this->op_8xy0(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 1] = [this]() { this->op_8xy1(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 2] = [this]() { this->op_8xy2(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 3] = [this]() { this->op_8xy3(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 4] = [this]() { this->op_8xy4(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 5] = [this]() { this->op_8xy5(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 6] = [this]() { this->op_8xy6(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 7] = [this]() { this->op_8xy7(); };
-        table[chip8::OPCODE_INDEX::OP_8XYN + 0xe]
-            = [this]() { this->op_8xye(); };
-        table[chip8::OPCODE_INDEX::OP_00E0] = [this]() { this->op_00e0(); };
-        table[chip8::OPCODE_INDEX::OP_00EE] = [this]() { this->op_00ee(); };
-        table[chip8::OPCODE_INDEX::OP_FX07] = [this]() { this->op_fx07(); };
-        table[chip8::OPCODE_INDEX::OP_FX0A] = [this]() { this->op_fx0a(); };
-        table[chip8::OPCODE_INDEX::OP_FX15] = [this]() { this->op_fx15(); };
-        table[chip8::OPCODE_INDEX::OP_FX18] = [this]() { this->op_fx18(); };
-        table[chip8::OPCODE_INDEX::OP_FX1E] = [this]() { this->op_fx1e(); };
-        table[chip8::OPCODE_INDEX::OP_FX29] = [this]() { this->op_fx29(); };
-        table[chip8::OPCODE_INDEX::OP_FX33] = [this]() { this->op_fx33(); };
-        table[chip8::OPCODE_INDEX::OP_FX55] = [this]() { this->op_fx55(); };
-        table[chip8::OPCODE_INDEX::OP_FX65] = [this]() { this->op_fx65(); };
+        table_0[0x0] = [this]() { op_00e0(); };
+        table_0[0xe] = [this] { op_00ee(); };
+
+        table[0x0] = [this]() { table_0[this->opcode & 0xf](); };
+        table[0x1] = [this]() { op_1nnn(); };
+        table[0x2] = [this]() { op_2nnn(); };
+        table[0x3] = [this]() { op_3xkk(); };
+        table[0x4] = [this]() { op_4xkk(); };
+        table[0x5] = [this]() { op_5xy0(); };
+        table[0x6] = [this]() { op_6xkk(); };
+        table[0x7] = [this]() { op_7xkk(); };
+        table[0x8] = [this]() { table_8[this->opcode & 0xf](); };
+        table[0x9] = [this]() { op_9xy0(); };
+        table[0xa] = [this]() { op_annn(); };
+        table[0xb] = [this]() { op_bnnn(); };
+        table[0xc] = [this]() { op_cxkk(); };
+        table[0xd] = [this]() { op_dxyn(); };
+        table[0xe] = [this]() { table_e[this->opcode & 0xf](); };
+        table[0xf] = [this]() { table_f[this->opcode & 0xff](); };
+
+        table_8[0x0] = [this]() { op_8xy0(); };
+        table_8[0x1] = [this]() { op_8xy1(); };
+        table_8[0x2] = [this]() { op_8xy2(); };
+        table_8[0x3] = [this]() { op_8xy3(); };
+        table_8[0x4] = [this]() { op_8xy4(); };
+        table_8[0x5] = [this]() { op_8xy5(); };
+        table_8[0x6] = [this]() { op_8xy6(); };
+        table_8[0x7] = [this]() { op_8xy7(); };
+        table_8[0xe] = [this]() { op_8xye(); };
+
+        table_e[0xe] = [this]() { op_ex9e(); };
+        table_e[0x1] = [this]() { op_exa1(); };
+
+        table_f[0x07] = [this]() { op_fx07(); };
+        table_f[0x0a] = [this]() { op_fx0a(); };
+        table_f[0x15] = [this]() { op_fx15(); };
+        table_f[0x18] = [this]() { op_fx18(); };
+        table_f[0x1e] = [this]() { op_fx1e(); };
+        table_f[0x29] = [this]() { op_fx29(); };
+        table_f[0x33] = [this]() { op_fx33(); };
+        table_f[0x55] = [this]() { op_fx55(); };
+        table_f[0x65] = [this]() { op_fx65(); };
     }
 
     void load_rom(const string& rom)
@@ -161,61 +152,8 @@ private:
     void decode_execute()
     {
         uint8_t nibble1 = opcode >> 12;
-        uint8_t nibble2 = (opcode & 0x0f00) >> 8;
-        uint8_t nibble3 = (opcode & 0x00f0) >> 4;
-        uint8_t nibble4 = opcode & 0x000f;
 
-        if (nibble1 >= 1 && nibble1 <= 0xd && nibble1 != 8) {
-            table[nibble1]();
-        } else if (nibble1 == 8) {
-            table[OPCODE_INDEX::OP_8XYN + nibble4]();
-        } else if (nibble1 == 0xe) {
-            if (nibble4 == 0xe) {
-                table[OPCODE_INDEX::OP_EX9E]();
-            } else {
-                table[OPCODE_INDEX::OP_EXA1]();
-            }
-        } else if (nibble1 == 0) {
-            if (nibble4 == 0) {
-                table[OPCODE_INDEX::OP_00E0]();
-            } else {
-                table[OPCODE_INDEX::OP_00EE]();
-            }
-        } else if (nibble1 == 0xf) {
-            switch (nibble4) {
-            case 7:
-                table[OPCODE_INDEX::OP_FX07]();
-                break;
-            case 0xa:
-                table[OPCODE_INDEX::OP_FX0A]();
-                break;
-            case 5:
-                switch (nibble3) {
-                case 1:
-                    table[OPCODE_INDEX::OP_FX15]();
-                    break;
-                case 5:
-                    table[OPCODE_INDEX::OP_FX55]();
-                    break;
-                case 6:
-                    table[OPCODE_INDEX::OP_FX65]();
-                    break;
-                }
-                break;
-            case 8:
-                table[OPCODE_INDEX::OP_FX18]();
-                break;
-            case 0xe:
-                table[OPCODE_INDEX::OP_FX1E]();
-                break;
-            case 9:
-                table[OPCODE_INDEX::OP_FX29]();
-                break;
-            case 3:
-                table[OPCODE_INDEX::OP_FX33]();
-                break;
-            }
-        }
+        table[nibble1]();
     }
 
     void op_00e0()
@@ -323,8 +261,7 @@ private:
         uint16_t result = registers[x] + registers[y];
         if (result > 255) {
             registers[0xf] = 1;
-        }
-        else {
+        } else {
             registers[0xf] = 0;
         }
         registers[x] = result;
@@ -532,7 +469,7 @@ int main(int argc, char** argv)
     chip8 chip(argv[1]);
 
     InitWindow(1280, 640, "chip-8 emulator");
-    SetTargetFPS(1000);
+    SetTargetFPS(800);
     double tick = 0;
 
     while (!WindowShouldClose()) {
