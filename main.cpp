@@ -39,7 +39,6 @@ class chip8 {
 public:
     vector<vector<uint8_t>> display { vector(
         SCREEN_HEIGHT, vector<uint8_t>(SCREEN_WIDTH)) };
-    vector<bool> keyboard { vector<bool>(16) };
     uint8_t delay { 0 };
     uint8_t sound { 0 };
 
@@ -57,10 +56,19 @@ public:
         decode_execute();
     }
 
+    void set_key(int i) {
+        keyboard[i] = true;
+    }
+
+    void unset_keys() {
+        fill(keyboard.begin(), keyboard.end(), false);
+    }
+
 private:
     vector<uint8_t> memory { vector<uint8_t>(MEMORY_SIZE) };
     vector<uint8_t> registers { vector<uint8_t>(16) };
     vector<uint16_t> stack { vector<uint16_t>(16) };
+    vector<bool> keyboard { vector<bool>(16) };
     uint16_t opcode { };
     uint16_t index { 0 };
     uint16_t pc { EXECUTION_START };
@@ -74,6 +82,7 @@ private:
     map<uint8_t, function<void(void)>> table_f { };
     uint8_t x { }, y { }, n { }, kk { };
     uint16_t nnn { };
+
 
     void init_table()
     {
@@ -433,54 +442,54 @@ int main(int argc, char** argv)
 
     while (!WindowShouldClose()) {
         tick += GetFrameTime();
-        fill(chip.keyboard.begin(), chip.keyboard.end(), 0);
+        chip.unset_keys();
         if (IsKeyDown(KEY_ONE)) {
-            chip.keyboard[1] = true;
+            chip.set_key(1);
         }
         if (IsKeyDown(KEY_TWO)) {
-            chip.keyboard[2] = true;
+            chip.set_key(2);
         }
         if (IsKeyDown(KEY_THREE)) {
-            chip.keyboard[3] = true;
+            chip.set_key(3);
         }
         if (IsKeyDown(KEY_FOUR)) {
-            chip.keyboard[0xc] = true;
+            chip.set_key(0xc);
         }
         if (IsKeyDown(KEY_Q)) {
-            chip.keyboard[4] = true;
+            chip.set_key(4);
         }
         if (IsKeyDown(KEY_W)) {
-            chip.keyboard[5] = true;
+            chip.set_key(5);
         }
         if (IsKeyDown(KEY_E)) {
-            chip.keyboard[6] = true;
+            chip.set_key(6);
         }
         if (IsKeyDown(KEY_R)) {
-            chip.keyboard[0xd] = true;
+            chip.set_key(0xd);
         }
         if (IsKeyDown(KEY_A)) {
-            chip.keyboard[7] = true;
+            chip.set_key(7);
         }
         if (IsKeyDown(KEY_S)) {
-            chip.keyboard[8] = true;
+            chip.set_key(8);
         }
         if (IsKeyDown(KEY_D)) {
-            chip.keyboard[9] = true;
+            chip.set_key(9);
         }
         if (IsKeyDown(KEY_F)) {
-            chip.keyboard[0xe] = true;
+            chip.set_key(0xe);
         }
         if (IsKeyDown(KEY_Z)) {
-            chip.keyboard[0xa] = true;
+            chip.set_key(0xa);
         }
         if (IsKeyDown(KEY_X)) {
-            chip.keyboard[0] = true;
+            chip.set_key(0);
         }
         if (IsKeyDown(KEY_C)) {
-            chip.keyboard[0xb] = true;
+            chip.set_key(0xb);
         }
         if (IsKeyDown(KEY_V)) {
-            chip.keyboard[0xf] = true;
+            chip.set_key(0xf);
         }
 
         BeginDrawing();
