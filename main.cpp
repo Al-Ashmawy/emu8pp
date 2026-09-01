@@ -67,11 +67,13 @@ private:
     int8_t sp { -1 };
     mt19937 random_byte { mt19937(
         chrono::system_clock::now().time_since_epoch().count()) };
-    map<uint8_t, function<void(void)>> table;
-    map<uint8_t, function<void(void)>> table_0;
-    map<uint8_t, function<void(void)>> table_8;
-    map<uint8_t, function<void(void)>> table_e;
-    map<uint8_t, function<void(void)>> table_f;
+    map<uint8_t, function<void(void)>> table { };
+    map<uint8_t, function<void(void)>> table_0 { };
+    map<uint8_t, function<void(void)>> table_8 { };
+    map<uint8_t, function<void(void)>> table_e { };
+    map<uint8_t, function<void(void)>> table_f { };
+    uint8_t x { }, y { }, n { }, kk { };
+    uint16_t nnn { };
 
     void init_table()
     {
@@ -147,6 +149,12 @@ private:
     {
         opcode = (memory[pc] << 8) | memory[pc + 1];
         pc += 2;
+
+        x = (opcode & 0x0f00) >> 8;
+        y = (opcode & 0x00f0) >> 4;
+        n = opcode & 0x000f;
+        kk = opcode & 0x00ff;
+        nnn = opcode & 0x0fff;
     }
 
     void decode_execute()
@@ -173,40 +181,32 @@ private:
 
     void op_1nnn()
     {
-        uint16_t address = opcode & 0x0fff;
-        pc = address;
+        pc = nnn;
     }
 
     void op_2nnn()
     {
-        uint16_t address = opcode & 0x0fff;
         sp++;
         stack[sp] = pc;
-        pc = address;
+        pc = nnn;
     }
 
     void op_3xkk()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint16_t k = opcode & 0x00ff;
-        if (registers[x] == k) {
+        if (registers[x] == kk) {
             pc += 2;
         }
     }
 
     void op_4xkk()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint16_t k = opcode & 0x00ff;
-        if (registers[x] != k) {
+        if (registers[x] != kk) {
             pc += 2;
         }
     }
 
     void op_5xy0()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[x] == registers[y]) {
             pc += 2;
         }
@@ -214,50 +214,36 @@ private:
 
     void op_6xkk()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint16_t k = (opcode & 0x00ff);
-        registers[x] = k;
+        registers[x] = kk;
     }
 
     void op_7xkk()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint16_t k = (opcode & 0x00ff);
-        registers[x] = registers[x] + k;
+        registers[x] = registers[x] + kk;
     }
 
     void op_8xy0()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         registers[x] = registers[y];
     }
 
     void op_8xy1()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         registers[x] = registers[x] | registers[y];
     }
 
     void op_8xy2()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         registers[x] = registers[x] & registers[y];
     }
 
     void op_8xy3()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         registers[x] = registers[x] ^ registers[y];
     }
 
     void op_8xy4()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         uint16_t result = registers[x] + registers[y];
         if (result > 255) {
             registers[0xf] = 1;
@@ -269,8 +255,6 @@ private:
 
     void op_8xy5()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[x] > registers[y]) {
             registers[0xf] = 1;
         } else {
@@ -281,15 +265,12 @@ private:
 
     void op_8xy6()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         registers[0xf] = registers[x] & 1;
         registers[x] >>= 1;
     }
 
     void op_8xy7()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[y] > registers[x]) {
             registers[0xf] = 1;
         } else {
@@ -300,15 +281,12 @@ private:
 
     void op_8xye()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         registers[0xf] = (registers[x] >> 7);
         registers[x] <<= 1;
     }
 
     void op_9xy0()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         if (registers[x] != registers[y]) {
             pc += 2;
         }
@@ -316,31 +294,23 @@ private:
 
     void op_annn()
     {
-        uint16_t address = opcode & 0x0fff;
-        index = address;
+        index = nnn;
     }
 
     void op_bnnn()
     {
-        uint16_t address = opcode & 0x0fff;
-        pc = address + registers[0];
+        pc = nnn + registers[0];
     }
 
     void op_cxkk()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint16_t k = (opcode & 0x00ff);
-
-        registers[x] = (random_byte() % 256) & k;
+        registers[x] = (random_byte() % 256) & kk;
     }
 
     void op_dxyn()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
-        uint8_t y = (opcode & 0x00f0) >> 4;
         uint8_t vx = registers[x];
         uint8_t vy = registers[y];
-        uint8_t n = opcode & 0x000f;
 
         bool collision = false;
         for (int i = 0; i < n; i++) {
@@ -361,7 +331,6 @@ private:
 
     void op_ex9e()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         uint8_t vx = registers[x];
         if (keyboard[vx]) {
             pc += 2;
@@ -370,7 +339,6 @@ private:
 
     void op_exa1()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         uint8_t vx = registers[x];
         if (!keyboard[vx]) {
             pc += 2;
@@ -379,13 +347,11 @@ private:
 
     void op_fx07()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         registers[x] = delay;
     }
 
     void op_fx0a()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         for (int i = 0; i <= 0xf; i++) {
             if (keyboard[i]) {
                 registers[x] = i;
@@ -398,31 +364,26 @@ private:
 
     void op_fx15()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         delay = registers[x];
     }
 
     void op_fx18()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         sound = registers[x];
     }
 
     void op_fx1e()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         index = index + registers[x];
     }
 
     void op_fx29()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         index = FONT_START + registers[x] * 5;
     }
 
     void op_fx33()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         uint8_t num = registers[x];
         for (int i = 2; i >= 0; i--) {
             memory[index + i] = num % 10;
@@ -432,7 +393,6 @@ private:
 
     void op_fx55()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         for (size_t i = 0; i <= x; i++) {
             memory[index + i] = registers[i];
         }
@@ -440,7 +400,6 @@ private:
 
     void op_fx65()
     {
-        uint8_t x = (opcode & 0x0f00) >> 8;
         for (size_t i = 0; i <= x; i++) {
             registers[i] = memory[index + i];
         }
