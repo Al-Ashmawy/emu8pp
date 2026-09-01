@@ -86,6 +86,10 @@ public:
         return error_message;
     }
 
+    bool is_playing_sound() {
+        return sound != 0;
+    }
+
 private:
     vector<uint8_t> memory { vector<uint8_t>(MEMORY_SIZE) };
     vector<uint8_t> registers { vector<uint8_t>(16) };
@@ -501,7 +505,11 @@ int main(int argc, char** argv)
 
     SetTraceLogLevel(LOG_NONE);
     InitWindow(1280, 640, "chip-8 emulator");
+    InitAudioDevice();
     SetTargetFPS(800);
+
+    Sound sound = LoadSound("8-bit-sound.mp3");
+
     double tick = 0;
 
     while (!WindowShouldClose()) {
@@ -566,6 +574,10 @@ int main(int argc, char** argv)
             chip.tick_timers();
         }
 
+        if (chip.is_playing_sound()) {
+            PlaySound(sound);
+        }
+
         chip.cycle();
         if (chip.is_halted()) {
             println(cerr, "{}", chip.error());
@@ -573,6 +585,8 @@ int main(int argc, char** argv)
         }
     }
 
+    UnloadSound(sound);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
