@@ -39,8 +39,6 @@ class chip8 {
 public:
     vector<vector<uint8_t>> display { vector(
         SCREEN_HEIGHT, vector<uint8_t>(SCREEN_WIDTH)) };
-    uint8_t delay { 0 };
-    uint8_t sound { 0 };
 
     chip8(const string& rom)
     {
@@ -64,6 +62,15 @@ public:
         fill(keyboard.begin(), keyboard.end(), false);
     }
 
+    void tick_timers() {
+        if (delay > 0) {
+            delay--;
+        }
+        if (sound > 0) {
+            sound--;
+        }
+    }
+
 private:
     vector<uint8_t> memory { vector<uint8_t>(MEMORY_SIZE) };
     vector<uint8_t> registers { vector<uint8_t>(16) };
@@ -73,6 +80,8 @@ private:
     uint16_t index { 0 };
     uint16_t pc { EXECUTION_START };
     int8_t sp { -1 };
+    uint8_t delay { 0 };
+    uint8_t sound { 0 };
     mt19937 random_byte { mt19937(
         chrono::system_clock::now().time_since_epoch().count()) };
     map<uint8_t, function<void(void)>> table { };
@@ -499,12 +508,7 @@ int main(int argc, char** argv)
 
         if (tick >= 1.0 / 60) {
             tick = 0;
-            if (chip.delay > 0) {
-                chip.delay--;
-            }
-            if (chip.sound > 0) {
-                chip.sound--;
-            }
+            chip.tick_timers();
         }
         chip.cycle();
     }
