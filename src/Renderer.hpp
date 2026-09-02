@@ -5,15 +5,13 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 class Renderer {
 public:
-    Renderer(int width, int height, int scale, const string& title, int fps);
+    Renderer(int width, int height, int scale, const std::string& title, int fps);
 
     ~Renderer();
 
-    void load_sound(const string& file);
+    void load_sound(const std::string& file);
 
     void play_sound();
 
@@ -23,7 +21,7 @@ public:
 
     bool should_close();
 
-    void draw_display(const vector<vector<uint8_t>>& display);
+    void draw_display(const std::vector<std::vector<uint8_t>>& display);
 
 private:
     Sound sound { };
