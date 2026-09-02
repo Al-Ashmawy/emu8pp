@@ -25,7 +25,7 @@ IBM logo:
 ## How to build
 Requires C++23 compiler and [raylib](https://www.raylib.com/)
 ```sh
-g++ -std=c++23 main.cpp -lraylib -o emu8pp
+g++ -std=c++23 src/*.cpp -lraylib -o emu8pp
 ```
 
 ## How to use
