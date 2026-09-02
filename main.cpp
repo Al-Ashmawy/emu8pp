@@ -493,7 +493,7 @@ int main(int argc, char** argv)
 {
 
     if (argc < 2) {
-        println(cerr, "{} FLIE", argv[0]);
+        println(cerr, "{} FILE", argv[0]);
         return 1;
     }
 
