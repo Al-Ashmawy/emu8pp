@@ -69,16 +69,18 @@ private:
     uint8_t sound { 0 };
     std::mt19937 random_byte { std::mt19937(
         std::chrono::system_clock::now().time_since_epoch().count()) };
-    std::map<uint8_t, std::function<void(void)>> table { };
-    std::map<uint8_t, std::function<void(void)>> table_0 { };
-    std::map<uint8_t, std::function<void(void)>> table_8 { };
-    std::map<uint8_t, std::function<void(void)>> table_e { };
-    std::map<uint8_t, std::function<void(void)>> table_f { };
+    std::map<uint16_t, std::function<void(void)>> table { };
+    std::map<uint16_t, std::function<void(void)>> table_0 { };
+    std::map<uint16_t, std::function<void(void)>> table_8 { };
+    std::map<uint16_t, std::function<void(void)>> table_e { };
+    std::map<uint16_t, std::function<void(void)>> table_f { };
     uint8_t x { }, y { }, n { }, kk { };
     uint16_t nnn { };
     bool halted { false };
     bool rom_loaded { true };
     std::string error_message { };
+
+    void invalid_instruction();
 
     void init_table();
 

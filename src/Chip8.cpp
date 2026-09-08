@@ -66,16 +66,21 @@ bool Chip8::is_playing_sound()
     return sound != 0;
 }
 
+void Chip8::invalid_instruction()
+{
+    halted = true;
+    error_message = format("invalid instruction {:4x}", opcode);
+}
+
 void Chip8::init_table()
 {
-    table_0[0x0] = [this]() { op_00e0(); };
-    table_0[0xe] = [this] { op_00ee(); };
+    table_0[0x00e0] = [this]() { op_00e0(); };
+    table_0[0x00ee] = [this]() { op_00ee(); };
 
     table[0x0] = [this]() {
-        auto it = table_0.find(this->opcode & 0xf);
+        auto it = table_0.find(this->opcode);
         if (it == table_0.end()) {
-            halted = true;
-            error_message = format("invalid instruction {:4x}", opcode);
+            invalid_instruction();
             return;
         }
         it->second();
@@ -84,7 +89,13 @@ void Chip8::init_table()
     table[0x2] = [this]() { op_2nnn(); };
     table[0x3] = [this]() { op_3xkk(); };
     table[0x4] = [this]() { op_4xkk(); };
-    table[0x5] = [this]() { op_5xy0(); };
+    table[0x5] = [this]() {
+        if ((opcode & 0x000f) != 0x0) {
+            invalid_instruction();
+            return;
+        }
+        op_5xy0();
+    };
     table[0x6] = [this]() { op_6xkk(); };
     table[0x7] = [this]() { op_7xkk(); };
     table[0x8] = [this]() {
@@ -96,16 +107,21 @@ void Chip8::init_table()
         }
         it->second();
     };
-    table[0x9] = [this]() { op_9xy0(); };
+    table[0x9] = [this]() {
+        if ((opcode & 0xf) != 0x0) {
+            invalid_instruction();
+            return;
+        }
+        op_9xy0();
+    };
     table[0xa] = [this]() { op_annn(); };
     table[0xb] = [this]() { op_bnnn(); };
     table[0xc] = [this]() { op_cxkk(); };
     table[0xd] = [this]() { op_dxyn(); };
     table[0xe] = [this]() {
-        auto it = table_e.find(this->opcode & 0xf);
+        auto it = table_e.find(this->opcode & 0xff);
         if (it == table_e.end()) {
-            halted = true;
-            error_message = format("invalid instruction {:4x}", opcode);
+            invalid_instruction();
             return;
         }
         it->second();
@@ -113,8 +129,7 @@ void Chip8::init_table()
     table[0xf] = [this]() {
         auto it = table_f.find(this->opcode & 0xff);
         if (it == table_f.end()) {
-            halted = true;
-            error_message = format("invalid instruction {:4x}", opcode);
+            invalid_instruction();
             return;
         }
         it->second();
@@ -130,8 +145,8 @@ void Chip8::init_table()
     table_8[0x7] = [this]() { op_8xy7(); };
     table_8[0xe] = [this]() { op_8xye(); };
 
-    table_e[0xe] = [this]() { op_ex9e(); };
-    table_e[0x1] = [this]() { op_exa1(); };
+    table_e[0x9e] = [this]() { op_ex9e(); };
+    table_e[0xa1] = [this]() { op_exa1(); };
 
     table_f[0x07] = [this]() { op_fx07(); };
     table_f[0x0a] = [this]() { op_fx0a(); };
