@@ -37,9 +37,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    Renderer renderer(1280, 640, 1280 / SCREEN_WIDTH, "chip-8 emulator", 800);
+    Renderer renderer(1280, 640, 1280 / SCREEN_WIDTH, "chip-8 emulator", 60);
     renderer.load_sound("8-bit-sound.mp3");
 
+    bool halt = false;
     while (!renderer.should_close()) {
         chip.unset_keys();
         for (auto [key, hex] : keymap) {
@@ -47,20 +48,26 @@ int main(int argc, char** argv)
                 chip.set_key(hex);
             }
         }
-
         renderer.draw_display(chip.get_display());
 
         if (renderer.elapsed_60hz()) {
             chip.tick_timers();
         }
 
-        if (chip.is_playing_sound()) {
-            renderer.play_sound();
+
+        for (int i = 0; i < 13; i++) {
+            if (chip.is_playing_sound()) {
+                renderer.play_sound();
+            }
+
+            chip.cycle();
+            if ((halt = chip.is_halted())) {
+                println(cerr, "{}", chip.error());
+                break;
+            }
         }
 
-        chip.cycle();
-        if (chip.is_halted()) {
-            println(cerr, "{}", chip.error());
+        if (halt) {
             break;
         }
     }
