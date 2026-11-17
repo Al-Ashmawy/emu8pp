@@ -9,7 +9,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    const vector<pair<KeyboardKey, int>> keymap = { { KEY_ONE, 1 },
+    const map<KeyboardKey, int> keymap = { { KEY_ONE, 1 },
         { KEY_TWO, 2 },
         { KEY_THREE, 3 },
         { KEY_FOUR, 0xc },
@@ -53,7 +53,6 @@ int main(int argc, char** argv)
         if (renderer.elapsed_60hz()) {
             chip.tick_timers();
         }
-
 
         for (int i = 0; i < 13; i++) {
             if (chip.is_playing_sound()) {
